@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Newsreader, Tajawal } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const newsreader = Newsreader({
   subsets: ["latin"],
+  variable: "--font-newsreader",
+});
+
+const tajawal = Tajawal({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-tajawal",
 });
 
 export const metadata: Metadata = {
-  title: "Catch",
-  description: "Catch",
+  title: "Catch — THE DEAL",
+  description: "Catch classifieds for Jordan",
 };
 
 export default function RootLayout({
@@ -23,8 +29,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html
+      lang="en"
+      className={`${inter.variable} ${newsreader.variable} ${tajawal.variable} h-full antialiased`}
+    >
+      <body className="min-h-full bg-[#fbf9f6] text-[#231F20]">{children}</body>
     </html>
   );
 }

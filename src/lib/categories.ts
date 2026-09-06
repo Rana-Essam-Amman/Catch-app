@@ -1,0 +1,18 @@
+export const CATEGORIES = [
+  { slug: "motors", en: "Motors", ar: "سيارات ومركبات", icon: "🚗" },
+  { slug: "real-estate", en: "Real Estate", ar: "عقارات وأراضي", icon: "🏠" },
+  { slug: "mobiles", en: "Mobiles", ar: "موبايل وتابلت", icon: "📱" },
+  { slug: "watches", en: "Watches", ar: "ساعات ومجوهرات", icon: "⌚" },
+  { slug: "computers", en: "Computers", ar: "كمبيوتر ولابتوب", icon: "💻" },
+  { slug: "electronics", en: "Electronics", ar: "أجهزة منزلية", icon: "📺" },
+  { slug: "furniture", en: "Furniture", ar: "أثاث وديكور", icon: "🛋️" },
+  { slug: "fashion", en: "Fashion", ar: "أزياء وموضة", icon: "👗" },
+  { slug: "services", en: "Services", ar: "خدمات وأعمال", icon: "🛠️" },
+  { slug: "jobs", en: "Jobs", ar: "وظائف وشواغر", icon: "💼" },
+  { slug: "baby", en: "Baby & Kids", ar: "مستلزمات أطفال", icon: "🧸" },
+  { slug: "beauty", en: "Beauty", ar: "صحة وجمال", icon: "✨" },
+  { slug: "pets", en: "Pets", ar: "حيوانات أليفة", icon: "🐾" },
+  { slug: "sports", en: "Sports & Bikes", ar: "رياضة ودراجات", icon: "🚲" },
+  { slug: "hobbies", en: "Hobbies & Art", ar: "هوايات وفنون", icon: "🎨" },
+  { slug: "more", en: "More", ar: "المزيد", icon: "⚙️" },
+] as const;

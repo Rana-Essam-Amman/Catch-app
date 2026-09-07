@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AppShell } from "@/components/AppShell";
 import { BottomNav } from "@/components/BottomNav";
+import { CategoryGrid } from "@/components/CategoryGrid";
+import { IconButton } from "@/components/IconButton";
 import { ListingCard } from "@/components/ListingCard";
-import { CATEGORIES } from "@/lib/categories";
+import { SearchBar } from "@/components/SearchBar";
 import { DEMO_LISTINGS } from "@/lib/demo-listings";
 import { prisma } from "@/lib/prisma";
 import { clearSessionCookie, getSessionUserId } from "@/lib/auth";
@@ -81,6 +84,8 @@ export default async function ExplorePage() {
     sessionUser?.name?.trim() ||
     null;
 
+  const initial = displayName ? displayName.slice(0, 1).toUpperCase() : null;
+
   async function signOut() {
     "use server";
     await clearSessionCookie();
@@ -88,97 +93,97 @@ export default async function ExplorePage() {
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[430px] bg-[#fbf9f6] pb-28">
-      <header className="flex items-start justify-between px-5 pt-6">
+    <AppShell className="pb-32">
+      <header className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
         <div>
-          <div className="text-2xl font-semibold tracking-tight text-[#191714]">
+          <p className="font-display text-[28px] font-bold leading-none tracking-tight text-[var(--color-primary)]">
             Catch
-          </div>
-          <div className="mt-1 text-sm text-[#77716b]">
-            Find what you need. Sell what you don&apos;t.
-          </div>
+          </p>
+          <p className="mt-1 text-[10px] font-semibold tracking-[0.28em] text-[var(--color-muted)]">
+            THE DEAL
+          </p>
         </div>
-
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Notifications coming soon"
-            title="Coming soon"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e7e0d8] bg-white text-lg shadow-sm"
-          >
-            🔔
-          </button>
-
+          <IconButton label="Notifications" title="Coming soon">
+            ⌁
+          </IconButton>
           {displayName ? (
             <div className="flex items-center gap-2">
-              <span className="max-w-[90px] truncate text-sm font-medium text-[#191714]">
+              <span className="max-w-[88px] truncate text-xs font-semibold text-[var(--color-primary)]">
                 {displayName}
               </span>
               <div
-                className="h-10 w-10 rounded-full bg-cover bg-center"
-                style={{
-                  backgroundImage:
-                    "url(https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80)",
-                }}
+                className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-warm-surface)] text-sm font-bold"
                 aria-label={displayName}
-              />
+              >
+                {initial}
+              </div>
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="rounded-full border border-[#e7e0d8] bg-white px-3 py-2 text-xs font-medium text-[#191714] shadow-sm"
+                  className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[11px] font-semibold"
                 >
                   Sign out
                 </button>
               </form>
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-2 text-sm font-medium text-[#191714]">
-                <Link href="/register" className="hover:underline">
-                  Create account
-                </Link>
-                <span className="text-[#b0aaa4]">·</span>
-                <Link href="/login" className="hover:underline">
-                  Sign in
-                </Link>
-              </div>
-              <div
-                className="h-10 w-10 rounded-full bg-cover bg-center"
-                style={{
-                  backgroundImage:
-                    "url(https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80)",
-                }}
-                aria-hidden="true"
-              />
-            </>
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Link href="/register">Create account</Link>
+              <span className="text-[var(--color-muted-secondary)]">·</span>
+              <Link href="/login">Sign in</Link>
+            </div>
           )}
         </div>
       </header>
 
-      <main className="px-5">
-        <section className="mt-7">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-[#191714]">Explore</h1>
-            <Link href="/listings" className="text-sm font-medium text-[#6f665e]">
-              See all
-            </Link>
-          </div>
+      <main className="px-5 pb-8 pt-4">
+        <button
+          type="button"
+          title="Coming soon"
+          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold text-[var(--color-primary)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+        >
+          <span aria-hidden>🇯🇴</span>
+          Jordan • Amman
+          <span aria-hidden className="text-[var(--color-muted-secondary)]">
+            ▾
+          </span>
+        </button>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-            {CATEGORIES.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/listings?category=${category.slug}`}
-                className="whitespace-nowrap rounded-full border border-[#e7e0d8] bg-white px-4 py-2 text-sm text-[#514b45]"
-              >
-                {category.en}
-              </Link>
-            ))}
-          </div>
-        </section>
+        <div className="mt-4">
+          <SearchBar />
+        </div>
 
         <section className="mt-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg font-bold text-[var(--color-primary)]">
+                All Categories
+              </h2>
+              <p className="font-arabic text-xs text-[var(--color-muted)]">
+                جميع الأقسام (16)
+              </p>
+            </div>
+            <Link
+              href="/listings"
+              className="text-xs font-bold text-[var(--color-primary)]"
+            >
+              Directory →
+            </Link>
+          </div>
+          <CategoryGrid />
+        </section>
+
+        <section className="mt-7">
+          <div className="mb-3">
+            <h2 className="font-display text-lg font-bold text-[var(--color-primary)]">
+              Recent Classifieds Nearby
+            </h2>
+            <p className="text-xs font-medium text-[var(--color-muted)]">
+              Direct peer-to-peer contacts
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             {feed.map((item, index) => (
               <ListingCard key={`${item.title}-${index}`} listing={item} />
             ))}
@@ -186,7 +191,27 @@ export default async function ExplorePage() {
         </section>
       </main>
 
+      <div className="pointer-events-none fixed bottom-[88px] left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 px-5">
+        <div className="pointer-events-auto mx-auto flex w-fit items-center gap-1 rounded-full bg-[rgba(35,31,32,0.92)] px-2 py-2 text-white shadow-[var(--shadow-float)]">
+          <button
+            type="button"
+            title="Coming soon"
+            className="rounded-full px-4 py-2 text-xs font-semibold"
+          >
+            Map View
+          </button>
+          <span className="h-4 w-px bg-white/20" aria-hidden />
+          <button
+            type="button"
+            title="Coming soon"
+            className="rounded-full px-4 py-2 text-xs font-semibold"
+          >
+            Filters
+          </button>
+        </div>
+      </div>
+
       <BottomNav active="explore" />
-    </div>
+    </AppShell>
   );
 }

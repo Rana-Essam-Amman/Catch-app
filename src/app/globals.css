@@ -2,14 +2,24 @@
 
 :root {
   --color-background: #fbf9f6;
-  --color-text-primary: #231f20;
+  --color-primary: #231f20;
+  --color-dark: #121212;
+  --color-surface: #ffffff;
+  --color-warm-surface: #f4f1ea;
   --color-border: #eae6df;
+  --color-muted: #666666;
+  --color-muted-secondary: #888888;
+  --color-success: #2e7d32;
+  --color-text-primary: #231f20;
   --color-accent-brown: #231f20;
-  --color-success: #25d366;
   --color-featured: #c4a574;
   --font-arabic: var(--font-tajawal), sans-serif;
   --font-display: var(--font-newsreader), serif;
   --font-ui: var(--font-inter), system-ui, sans-serif;
+  --radius-card: 16px;
+  --radius-pill: 24px;
+  --shadow-card: 0 4px 16px rgba(35, 31, 32, 0.06);
+  --shadow-float: 0 10px 24px rgba(35, 31, 32, 0.18);
 }
 
 html,
@@ -18,4 +28,12 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-ui);
   margin: 0;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-arabic {
+  font-family: var(--font-arabic);
 }

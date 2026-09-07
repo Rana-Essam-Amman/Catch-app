@@ -4,7 +4,14 @@ import { cookies } from "next/headers";
 const COOKIE = "catch_session";
 
 function secret() {
-  return new TextEncoder().encode(process.env.AUTH_SECRET || process.env.RESEND_API_KEY || "catch-dev-secret");
+  const value = process.env.AUTH_SECRET;
+  if (!value) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET is required");
+    }
+    return new TextEncoder().encode("local-dev-only");
+  }
+  return new TextEncoder().encode(value);
 }
 
 export async function signSession(userId: string) {
@@ -19,7 +26,7 @@ export async function setSessionCookie(token: string) {
   const jar = await cookies();
   jar.set(COOKIE, token, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 14,

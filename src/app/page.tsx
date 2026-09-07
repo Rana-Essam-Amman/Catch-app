@@ -18,12 +18,14 @@ export default async function ExplorePage() {
     currency: string;
     city: string;
     category: string;
+    phone?: string | null;
   }[] = [];
 
   try {
     const rows = await prisma.listing.findMany({
       orderBy: { createdAt: "desc" },
       take: 8,
+      include: { user: { select: { phoneNumber: true } } },
     });
 
     dbListings = rows.map((row) => ({
@@ -33,6 +35,7 @@ export default async function ExplorePage() {
       currency: row.currency,
       city: row.city,
       category: row.category,
+      phone: row.user.phoneNumber,
     }));
   } catch {
     dbListings = [];
@@ -51,6 +54,7 @@ export default async function ExplorePage() {
           ...item,
           neighborhood: item.city,
           subtitle: item.description,
+          phone: null as string | null,
         }));
 
   const sessionUserId = await getSessionUserId();
@@ -79,7 +83,6 @@ export default async function ExplorePage() {
 
   async function signOut() {
     "use server";
-
     await clearSessionCookie();
     redirect("/");
   }
@@ -99,7 +102,8 @@ export default async function ExplorePage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="Notifications"
+            aria-label="Notifications coming soon"
+            title="Coming soon"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e7e0d8] bg-white text-lg shadow-sm"
           >
             🔔
@@ -110,7 +114,6 @@ export default async function ExplorePage() {
               <span className="max-w-[90px] truncate text-sm font-medium text-[#191714]">
                 {displayName}
               </span>
-
               <div
                 className="h-10 w-10 rounded-full bg-cover bg-center"
                 style={{
@@ -119,7 +122,6 @@ export default async function ExplorePage() {
                 }}
                 aria-label={displayName}
               />
-
               <form action={signOut}>
                 <button
                   type="submit"
@@ -140,7 +142,6 @@ export default async function ExplorePage() {
                   Sign in
                 </Link>
               </div>
-
               <div
                 className="h-10 w-10 rounded-full bg-cover bg-center"
                 style={{
@@ -157,13 +158,8 @@ export default async function ExplorePage() {
       <main className="px-5">
         <section className="mt-7">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-[#191714]">
-              Explore
-            </h1>
-            <Link
-              href="/listings"
-              className="text-sm font-medium text-[#6f665e]"
-            >
+            <h1 className="text-xl font-semibold text-[#191714]">Explore</h1>
+            <Link href="/listings" className="text-sm font-medium text-[#6f665e]">
               See all
             </Link>
           </div>
@@ -175,7 +171,7 @@ export default async function ExplorePage() {
                 href={`/listings?category=${category.slug}`}
                 className="whitespace-nowrap rounded-full border border-[#e7e0d8] bg-white px-4 py-2 text-sm text-[#514b45]"
               >
-                {category.name}
+                {category.en}
               </Link>
             ))}
           </div>
@@ -184,16 +180,13 @@ export default async function ExplorePage() {
         <section className="mt-6">
           <div className="grid grid-cols-2 gap-4">
             {feed.map((item, index) => (
-              <ListingCard
-                key={`${item.title}-${index}`}
-                listing={item}
-              />
+              <ListingCard key={`${item.title}-${index}`} listing={item} />
             ))}
           </div>
         </section>
       </main>
 
-      <BottomNav />
+      <BottomNav active="explore" />
     </div>
   );
 }

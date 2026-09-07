@@ -1,20 +1,63 @@
 "use client";
+
 import Link from "next/link";
 import { useState } from "react";
+
 export default function RegisterPage() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [email, setEmail] = useState("");
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(""); setStatus(""); setPending(true);
+    setError("");
+    setStatus("");
+    setPending(true);
     const form = new FormData(e.currentTarget);
-    const res = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: form.get("phone"), email: form.get("email"), password: form.get("password"), handle: form.get("handle") }) });
+    const payload = {
+      phone: form.get("phone"),
+      email: form.get("email"),
+      password: form.get("password"),
+      handle: form.get("handle"),
+    };
+    setEmail(String(payload.email || ""));
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     const data = await res.json();
     setPending(false);
-    if (!res.ok) { setError(data.error || "Could not create account"); return; }
+    if (res.status === 202 || data.needsVerification) {
+      setStatus(data.error || "Account created. Verification email could not be sent.");
+      return;
+    }
+    if (!res.ok) {
+      setError(data.error || "Could not create account");
+      return;
+    }
     setStatus("Account created. Check your email and tap the verification link.");
   }
+
+  async function resend() {
+    if (!email) return;
+    setPending(true);
+    const res = await fetch("/api/auth/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    setPending(false);
+    if (!res.ok) {
+      setError(data.error || "Could not resend email");
+      return;
+    }
+    setError("");
+    setStatus("If that account needs verification, a new email was sent.");
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-[430px] bg-[#fbf9f6] px-5 py-8 text-[#231F20]">
       <p className="text-[34px] leading-none" style={{ fontFamily: "var(--font-newsreader), serif" }}>Catch</p>
@@ -25,10 +68,17 @@ export default function RegisterPage() {
         <input name="phone" required placeholder="079xxxxxxx" className="w-full rounded-full border border-[#eae6df] bg-white px-4 py-3 text-sm outline-none" />
         <input name="email" type="email" required placeholder="Email" className="w-full rounded-full border border-[#eae6df] bg-white px-4 py-3 text-sm outline-none" />
         <input name="password" type="password" required minLength={6} placeholder="Password" className="w-full rounded-full border border-[#eae6df] bg-white px-4 py-3 text-sm outline-none" />
-        <button disabled={pending} className="w-full rounded-full bg-[#231F20] py-3 text-sm font-semibold text-[#fbf9f6]">{pending ? "Creating…" : "Create account"}</button>
+        <button disabled={pending} className="w-full rounded-full bg-[#231F20] py-3 text-sm font-semibold text-[#fbf9f6]">
+          {pending ? "Creating…" : "Create account"}
+        </button>
       </form>
       {error ? <p className="mt-4 text-sm text-[#d64545]">{error}</p> : null}
       {status ? <p className="mt-4 text-sm">{status}</p> : null}
+      {email ? (
+        <button type="button" onClick={resend} className="mt-3 text-sm font-semibold">
+          Resend verification email
+        </button>
+      ) : null}
       <p className="mt-6 text-sm opacity-70">Already have an account? <Link href="/login" className="font-semibold">Sign in</Link></p>
     </main>
   );

@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 type ListingCardProps = {
   listing: {
+    id?: string;
     title: string;
     subtitle: string;
     price: string;
@@ -26,59 +29,42 @@ function waHref(phone?: string | null) {
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
-  const { title, subtitle, price, currency, neighborhood, image, featured, phone } = listing;
+  const { id, title, subtitle, price, currency, neighborhood, image, featured, phone } = listing;
   const formatted = Number(price).toLocaleString("en-JO");
   const call = telHref(phone);
   const wa = waHref(phone);
-
-  return (
-    <article className="overflow-hidden rounded-[20px] border border-[#eae6df] bg-white shadow-[0_8px_24px_rgba(35,31,32,0.06)]">
+  const body = (
+    <>
       <div className="relative aspect-[4/3] overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={image} alt="" className="h-full w-full object-cover" />
         {featured ? (
-          <span className="absolute left-2 top-2 rounded-full bg-[#c4a574] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#231F20]">
-            Featured
-          </span>
+          <span className="absolute left-2 top-2 rounded-full bg-[#c4a574] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#231F20]">Featured</span>
         ) : null}
-        <button
-          type="button"
-          aria-label="Favorites coming soon"
-          title="Coming soon"
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-sm"
-        >
-          ♡
-        </button>
-        <span className="absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-medium text-[#231F20]">
-          {neighborhood}
-        </span>
+        <span className="absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-medium text-[#231F20]">{neighborhood}</span>
       </div>
       <div className="space-y-1.5 p-3">
-        <p className="text-lg font-bold leading-none text-[#231F20]">
-          {formatted} {currency}
-        </p>
+        <p className="text-lg font-bold leading-none text-[#231F20]">{formatted} {currency}</p>
         <h3 className="truncate text-sm font-medium text-[#231F20]">{title}</h3>
         <p className="truncate text-xs text-[#231F20]/55">{subtitle}</p>
-        <div className="flex gap-1.5 pt-1">
-          {call ? (
-            <a href={call} className="flex-1 rounded-full bg-[#231F20] py-2 text-center text-[11px] font-semibold text-[#fbf9f6]">
-              📞 Call
-            </a>
-          ) : (
-            <span className="flex-1 rounded-full bg-[#231F20]/40 py-2 text-center text-[11px] font-semibold text-[#fbf9f6]">
-              📞 Call
-            </span>
-          )}
-          {wa ? (
-            <a href={wa} target="_blank" rel="noopener noreferrer" className="flex-1 rounded-full bg-[#25d366] py-2 text-center text-[11px] font-semibold text-white">
-              💬 WA
-            </a>
-          ) : (
-            <span className="flex-1 rounded-full bg-[#25d366]/40 py-2 text-center text-[11px] font-semibold text-white">
-              💬 WA
-            </span>
-          )}
-        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <article className="overflow-hidden rounded-[20px] border border-[#eae6df] bg-white shadow-[0_8px_24px_rgba(35,31,32,0.06)]">
+      {id ? <Link href={`/listings/${id}`}>{body}</Link> : body}
+      <div className="flex gap-1.5 px-3 pb-3">
+        {call ? (
+          <a href={call} className="flex-1 rounded-full bg-[#231F20] py-2 text-center text-[11px] font-semibold text-[#fbf9f6]">📞 Call</a>
+        ) : (
+          <span className="flex-1 rounded-full bg-[#231F20]/40 py-2 text-center text-[11px] font-semibold text-[#fbf9f6]">📞 Call</span>
+        )}
+        {wa ? (
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="flex-1 rounded-full bg-[#25d366] py-2 text-center text-[11px] font-semibold text-white">💬 WA</a>
+        ) : (
+          <span className="flex-1 rounded-full bg-[#25d366]/40 py-2 text-center text-[11px] font-semibold text-white">💬 WA</span>
+        )}
       </div>
     </article>
   );

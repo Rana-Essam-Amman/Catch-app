@@ -1,25 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --color-background: #fbf9f6;
-  --color-primary: #231f20;
-  --color-dark: #121212;
+  --color-background: #ffffff;
+  --color-primary: #3a2418;
+  --color-dark: #28170f;
   --color-surface: #ffffff;
-  --color-warm-surface: #f4f1ea;
-  --color-border: #eae6df;
-  --color-muted: #666666;
-  --color-muted-secondary: #888888;
+  --color-warm-surface: #f5eee9;
+  --color-border: #eadfd7;
+  --color-muted: #8a7568;
+  --color-muted-secondary: #8a7568;
   --color-success: #2e7d32;
-  --color-text-primary: #231f20;
-  --color-accent-brown: #231f20;
-  --color-featured: #c4a574;
+  --color-text-primary: #3a2418;
+  --color-accent-brown: #3a2418;
+  --color-featured: #b89578;
+  --color-cappuccino: #b89578;
+  --color-light-cappuccino: #f3e9e1;
+  --color-dark-cappuccino: #8b654d;
+  --color-espresso: #3a2418;
+  --color-deep-espresso: #28170f;
   --font-arabic: var(--font-tajawal), sans-serif;
   --font-display: var(--font-newsreader), serif;
   --font-ui: var(--font-inter), system-ui, sans-serif;
   --radius-card: 16px;
   --radius-pill: 24px;
-  --shadow-card: 0 4px 16px rgba(35, 31, 32, 0.06);
-  --shadow-float: 0 10px 24px rgba(35, 31, 32, 0.18);
+  --shadow-soft: 0 5px 16px rgba(139, 101, 77, 0.13);
+  --shadow-card: 0 9px 24px rgba(139, 101, 77, 0.19);
+  --shadow-float: 0 12px 30px rgba(90, 58, 40, 0.25);
 }
 
 html,

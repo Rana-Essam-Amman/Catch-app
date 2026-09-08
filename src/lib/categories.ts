@@ -14,5 +14,5 @@ export const CATEGORIES = [
   { slug: "pets", en: "Pets", ar: "حيوانات أليفة", icon: "🐾" },
   { slug: "sports", en: "Sports & Bikes", ar: "رياضة ودراجات", icon: "🚲" },
   { slug: "hobbies", en: "Hobbies & Art", ar: "هوايات وفنون", icon: "🎨" },
-  { slug: "more", en: "More", ar: "المزيد", icon: "⚙️" },
+  { slug: "misc", en: "Miscellaneous / Stuff", ar: "كراكيب", icon: "📦" },
 ] as const;

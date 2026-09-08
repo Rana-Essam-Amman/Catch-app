@@ -66,7 +66,7 @@ export function activeListingWhere(now = new Date()) {
  * Alternative query for backward compatibility during migration.
  * Checks BOTH new state field AND legacy fields.
  */
-export function activeLis tingWhereWithFallback(now = new Date()) {
+export function activeListingWhereWithFallback(now = new Date()) {
   return {
     OR: [
       // New canonical state

@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
-import { listingState, parseListingInput } from "@/lib/listings";
+import {
+  MAX_ACTIVE_LISTINGS,
+  activeListingWhere,
+  expiresAtFrom,
+  listingState,
+  parseListingInput,
+} from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -49,9 +55,29 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
+  const otherActive = await prisma.listing.count({
+    where: {
+      userId,
+      NOT: { id },
+      ...activeListingWhere(),
+    },
+  });
+  if (otherActive >= MAX_ACTIVE_LISTINGS) {
+    return NextResponse.json(
+      {
+        error: `You already have ${MAX_ACTIVE_LISTINGS} active listings. Sell or wait for one to expire to free a slot.`,
+      },
+      { status: 409 },
+    );
+  }
+
+  const renewedAt = new Date();
   await prisma.listing.update({
     where: { id },
-    data: parsed.data,
+    data: {
+      ...parsed.data,
+      expiresAt: expiresAtFrom(renewedAt),
+    },
   });
 
   return NextResponse.json({ ok: true });

@@ -81,13 +81,20 @@ export async function POST(req: Request) {
         { status: 409 },
       );
     }
-    if (isLockTimeoutError(error) || error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (isLockTimeoutError(error) || String(error.message).toLowerCase().includes("lock")) {
-        return NextResponse.json(
-          { error: "Please try again in a moment." },
-          { status: 503 },
-        );
-      }
+    if (isLockTimeoutError(error)) {
+      return NextResponse.json(
+        { error: "Please try again in a moment." },
+        { status: 503 },
+      );
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.message.toLowerCase().includes("lock")
+    ) {
+      return NextResponse.json(
+        { error: "Please try again in a moment." },
+        { status: 503 },
+      );
     }
     return NextResponse.json({ error: "Could not publish listing." }, { status: 500 });
   }

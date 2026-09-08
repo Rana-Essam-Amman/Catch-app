@@ -3,7 +3,6 @@ import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { ListingCard } from "@/components/ListingCard";
 import { CATEGORIES } from "@/lib/categories";
-import { DEMO_LISTINGS } from "@/lib/demo-listings";
 import { activeListingWhere } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 
@@ -16,7 +15,6 @@ export default async function ListingsPage({
 }) {
   const { category } = await searchParams;
   const selected = CATEGORIES.find((item) => item.slug === category);
-  const placeholder = DEMO_LISTINGS[0]?.image;
 
   let error = false;
   let rows: {
@@ -45,7 +43,7 @@ export default async function ListingsPage({
       description: row.description,
       price: row.price.toString(),
       currency: row.currency,
-      city: row.city,
+      city: row.city || row.governorate || "",
       phone: row.user.phoneNumber,
     }));
   } catch {
@@ -53,19 +51,20 @@ export default async function ListingsPage({
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[430px] bg-[#fbf9f6] pb-28">
+    <div className="mx-auto min-h-screen w-full max-w-[430px] bg-[#ffffff] pb-28">
       <header className="px-5 pt-6">
-        <p className="text-2xl font-semibold tracking-tight text-[#191714]">Catch</p>
-        <h1 className="mt-4 text-xl font-semibold text-[#191714]">{selected ? selected.en : "All listings"}</h1>
+        <p className="font-display text-2xl font-semibold tracking-tight text-[#3A2418]">Catch</p>
+        <p className="font-display text-xs italic text-[#8B654D]">The Deal</p>
+        <h1 className="mt-4 text-xl font-semibold text-[#3A2418]">{selected ? selected.en : "All listings"}</h1>
         {selected ? (
-          <p className="mt-1 text-sm text-[#77716b]" style={{ fontFamily: "var(--font-tajawal), sans-serif" }}>{selected.ar}</p>
+          <p className="mt-1 font-arabic text-sm text-[#8A7568]">{selected.ar}</p>
         ) : null}
       </header>
       <main className="px-5 pt-5">
         {error ? (
-          <p className="rounded-[20px] border border-[#eae6df] bg-white p-4 text-sm text-[#77716b]">Listings are unavailable right now.</p>
+          <p className="rounded-[20px] border border-[#EADFD7] bg-white p-4 text-sm text-[#8A7568]">Listings are unavailable right now.</p>
         ) : rows.length === 0 ? (
-          <p className="rounded-[20px] border border-[#eae6df] bg-white p-4 text-sm text-[#77716b]">No listings in this category yet.</p>
+          <p className="rounded-[20px] border border-[#EADFD7] bg-[#F3E9E1] p-4 text-sm text-[#8A7568]">No listings in this category yet.</p>
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {rows.map((item) => (
@@ -78,14 +77,13 @@ export default async function ListingsPage({
                   price: item.price,
                   currency: item.currency,
                   neighborhood: item.city,
-                  image: placeholder,
                   phone: item.phone,
                 }}
               />
             ))}
           </div>
         )}
-        <Link href="/" className="mt-6 inline-block text-sm font-medium text-[#6f665e]">Back to Explore</Link>
+        <Link href="/" className="mt-6 inline-block text-sm font-medium text-[#8A7568]">Back to Explore</Link>
       </main>
       <BottomNav active="categories" />
     </div>

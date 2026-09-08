@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
     const handle = String(body.handle || "").trim().replace(/^@/, "");
+    const countryCode = String(body.countryCode || "").trim().toUpperCase();
 
     if (!phone) {
       return NextResponse.json({ error: "Use a valid Jordanian mobile number." }, { status: 400 });
@@ -23,12 +24,20 @@ export async function POST(req: Request) {
     if (!email.includes("@") || password.length < 6 || handle.length < 2) {
       return NextResponse.json({ error: "Check email, handle, and password (6+ chars)." }, { status: 400 });
     }
+    if (!countryCode || countryCode.length !== 2) {
+      return NextResponse.json({ error: "Select your country." }, { status: 400 });
+    }
 
     const exists = await prisma.user.findFirst({
       where: { OR: [{ email }, { handle }, { phoneNumber: phone }] },
     });
     if (exists) {
       return NextResponse.json({ error: "Email, handle, or phone already registered." }, { status: 409 });
+    }
+
+    const country = await prisma.country.findUnique({ where: { code: countryCode } });
+    if (!country) {
+      return NextResponse.json({ error: "That country is not available yet." }, { status: 400 });
     }
 
     const token = createVerifyToken();
@@ -42,6 +51,7 @@ export async function POST(req: Request) {
         emailVerified: false,
         emailVerifyToken: hashToken(token),
         emailVerifyTokenExpiresAt: new Date(Date.now() + 86400000),
+        baseCountryId: country.id,
       },
     });
 

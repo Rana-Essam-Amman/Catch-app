@@ -23,71 +23,41 @@ export const GOVERNORATES = [
 export type ListingLifecycleState = "active" | "expired" | "sold" | "deleted";
 
 export function listingState(input: {
-  isSold: boolean;
-  expiresAt: Date | null;
+  isSold?: boolean;
+  expiresAt?: Date | null;
+  state?: string | null;
+  deletedAt?: Date | null;
   now?: Date;
 }): ListingLifecycleState {
-  if (input.isSold) return "sold";
+  if (input.state === "deleted" || input.deletedAt) return "deleted";
+  if (input.state === "sold" || input.isSold) return "sold";
   const now = input.now ?? new Date();
-  if (input.expiresAt && input.expiresAt.getTime() <= now.getTime()) {
-    return "expired";
-  }
+  if (input.state === "expired") return "expired";
+  if (input.expiresAt && input.expiresAt.getTime() <= now.getTime()) return "expired";
   return "active";
 }
 
-/**
- * Query filter for public active listings.
- * 
- * Returns only listings that should be visible in public marketplace:
- * - NOT sold
- * - NOT expired
- * - NOT deleted (soft-delete)
- * 
- * After migration, this uses the new "state" field.
- * During transition, also checks legacy fields for backward compatibility.
- */
+/** Public marketplace: exclude sold, expired, and soft-deleted. */
 export function activeListingWhere(now = new Date()) {
   return {
     AND: [
-      // New authoritative state field (preferred after migration)
-      { state: "active" },
-      // Fallback to legacy fields during transition
-      {
-        OR: [
-          // Legacy path: if state not yet populated, use old logic
-          { state: null },
-        ],
-      },
+      { deletedAt: null },
+      { isSold: false },
+      { state: { notIn: ["sold", "expired", "deleted"] } },
+      { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
     ],
   };
 }
 
-/**
- * Alternative query for backward compatibility during migration.
- * Checks BOTH new state field AND legacy fields.
- */
 export function activeListingWhereWithFallback(now = new Date()) {
-  return {
-    OR: [
-      // New canonical state
-      { state: "active" },
-      // Legacy fallback (state not yet populated)
-      {
-        AND: [
-          { state: null },
-          { isSold: false },
-          { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-        ],
-      },
-    ],
-  };
+  return activeListingWhere(now);
 }
 
 export async function countActiveListings(userId: string, now = new Date()) {
   return prisma.listing.count({
     where: {
       userId,
-      ...activeListingWhereWithFallback(now),
+      ...activeListingWhere(now),
     },
   });
 }

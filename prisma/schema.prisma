@@ -7,6 +7,129 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// GEOGRAPHIC FOUNDATION (Multi-Country Architecture)
+// ============================================================================
+
+model Country {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique // ISO 3166-1 alpha-2 (e.g., "JO", "SA", "AE")
+  currency  String   // ISO 4217 (e.g., "JOD", "SAR", "AED")
+  
+  regions   Region[]
+  users     User[] // users with this as baseCountry
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([code])
+}
+
+model Region {
+  id        String   @id @default(cuid())
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  
+  name      String   // English/local name (e.g., "Amman", "Zarqa")
+  nameAr    String   // Arabic name (e.g., "عمّان")
+  code      String?  // Regional code if applicable
+  
+  cities    City[]
+  listings  Listing[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([countryId, code])
+  @@index([countryId])
+}
+
+model City {
+  id        String   @id @default(cuid())
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  
+  name      String   // English/local name
+  nameAr    String   // Arabic name
+  
+  neighborhoods Neighborhood[]
+  listings       Listing[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([regionId])
+}
+
+model Neighborhood {
+  id        String   @id @default(cuid())
+  cityId    String
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  
+  name      String   // English/local name
+  nameAr    String   // Arabic name
+  
+  listings  Listing[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([cityId])
+}
+
+// ============================================================================
+// CATEGORY & CONDITION FOUNDATION
+// ============================================================================
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique // e.g., "motors", "misc", "real-estate"
+  name        String   // English name
+  nameAr      String   // Arabic name
+  icon        String   // emoji or icon identifier
+  
+  subcategories Subcategory[]
+  listings      Listing[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Subcategory {
+  id         String   @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  slug       String   // e.g., "sedan", "suv"
+  name       String   // English name
+  nameAr     String   // Arabic name
+  
+  listings   Listing[]
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([categoryId, slug])
+  @@index([categoryId])
+}
+
+model Condition {
+  id        String   @id @default(cuid())
+  slug      String   @unique // e.g., "new", "like-new", "good", "fair", "poor"
+  name      String   // English name
+  nameAr    String   // Arabic name
+  
+  listings  Listing[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// USER (Updated with Multi-Country Support)
+// ============================================================================
+
 model User {
   id                        String     @id @default(cuid())
   email                     String     @unique
@@ -17,51 +140,245 @@ model User {
   emailVerified             Boolean    @default(false)
   emailVerifyToken          String?
   emailVerifyTokenExpiresAt DateTime?
+  
+  // Multi-country support
+  baseCountryId             String?
+  baseCountry               Country?   @relation(fields: [baseCountryId], references: [id])
+  
   freeSlotsUsed             Int        @default(0)
+  
   listings                  Listing[]
   favorites                 Favorite[]
+  
+  conversationParticipants  ConversationParticipant[]
+  sentMessages              Message[]  @relation("sender")
+  notifications             Notification[]
+  reportedListings          Report[]   @relation("reporter")
+  
   createdAt                 DateTime   @default(now())
   updatedAt                 DateTime   @updatedAt
+  
+  @@index([baseCountryId])
 }
 
-model Listing {
-  id            String     @id @default(cuid())
-  title         String
-  description   String
-  price         Decimal    @db.Decimal(12, 2)
-  currency      String
-  category      String
-  governorate   String
-  city          String
-  neighborhood  String?
-  expiresAt     DateTime?
-  isSold        Boolean    @default(false)
-  isFeatured    Boolean    @default(false)
-  featuredUntil DateTime?
-  viewCount     Int        @default(0)
-  chatCount     Int        @default(0)
-  userId        String
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  favorites     Favorite[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+// ============================================================================
+// LISTING WITH STRUCTURED REFERENCES & STATE
+// ============================================================================
 
-  @@index([category, createdAt])
-  @@index([governorate, city, createdAt])
+model Listing {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  price           Decimal  @db.Decimal(12, 2)
+  currency        String   // e.g., "JOD", "SAR" — should reference currency
+  
+  // Structured geographic references
+  countryId       String?
+  regionId        String?
+  cityId          String?
+  neighborhoodId  String?
+  
+  // For backward compatibility during migration:
+  // These are kept nullable to preserve existing listings
+  governorate     String?  // Legacy field (will map to region during migration)
+  city            String?  // Legacy city name fallback
+  neighborhood    String?  // Legacy neighborhood name fallback
+  
+  country         Country?       @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  region          Region?        @relation(fields: [regionId], references: [id], onDelete: SetNull)
+  city_rel        City?          @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  neighborhood_rel Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
+  
+  // Structured category/subcategory
+  categoryId      String?
+  category_rel    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category        String?        // Legacy fallback field
+  
+  subcategoryId   String?
+  subcategory     Subcategory?   @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  
+  // Condition
+  conditionId     String?
+  condition       Condition?     @relation(fields: [conditionId], references: [id], onDelete: SetNull)
+  
+  // Listing state & lifecycle
+  state           String         @default("active") // "active", "expired", "sold", "deleted" (soft-delete)
+  
+  // Feature & expiry
+  isFeatured      Boolean        @default(false)
+  featuredUntil   DateTime?
+  expiresAt       DateTime?
+  
+  // Legacy fields (kept for backward compatibility)
+  isSold          Boolean        @default(false)
+  
+  // Engagement
+  viewCount       Int            @default(0)
+  chatCount       Int            @default(0)
+  
+  // Relations
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  images          ListingImage[]
+  favorites       Favorite[]
+  conversations   Conversation[]
+  reports         Report[]
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?      // Soft-delete timestamp
+  
+  @@index([state])
+  @@index([categoryId, createdAt])
+  @@index([regionId, cityId, createdAt])
   @@index([isSold, createdAt])
   @@index([isFeatured, createdAt])
   @@index([expiresAt])
+  @@index([userId])
 }
+
+// ============================================================================
+// LISTING IMAGES
+// ============================================================================
+
+model ListingImage {
+  id          String   @id @default(cuid())
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  url         String   // Image URL or storage reference
+  isPrimary   Boolean  @default(false)
+  order       Int      // Display order (0-5, max 6 images per listing)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([listingId, order])
+  @@index([listingId])
+}
+
+// ============================================================================
+// FAVORITES
+// ============================================================================
 
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
   listingId String
-  createdAt DateTime @default(now())
+  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
+  
+  createdAt DateTime @default(now())
+  
   @@unique([userId, listingId])
   @@index([userId])
   @@index([listingId])
+}
+
+// ============================================================================
+// MESSAGING FOUNDATION
+// ============================================================================
+
+model Conversation {
+  id            String   @id @default(cuid())
+  listingId     String
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  participants  ConversationParticipant[]
+  messages      Message[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([listingId])
+}
+
+model ConversationParticipant {
+  id              String   @id @default(cuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  lastReadAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId        String
+  sender          User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  content         String
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model Notification {
+  id              String   @id @default(cuid())
+  recipientId     String
+  recipient       User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  
+  type            String   // e.g., "message", "listing_expired", "new_matching_listing", "listing_approved"
+  title           String
+  message         String
+  
+  isRead          Boolean  @default(false)
+  
+  // Optional reference to related entity
+  relatedEntityType String? // e.g., "listing", "message", "conversation"
+  relatedEntityId  String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([recipientId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// REPORTS (Listing Moderation)
+// ============================================================================
+
+model Report {
+  id              String   @id @default(cuid())
+  listingId       String
+  listing         Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  reporterId      String
+  reporter        User     @relation("reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  reason          String   // e.g., "scam", "prohibited_content", "misleading", "duplicate", "wrong_category", "other"
+  description     String?  // Optional detailed reason
+  
+  status          String   @default("pending") // "pending", "reviewed", "resolved", "dismissed"
+  adminNotes      String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([listingId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([createdAt])
 }

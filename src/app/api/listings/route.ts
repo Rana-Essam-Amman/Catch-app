@@ -49,6 +49,62 @@ export async function POST(req: Request) {
         throw new Error("ACTIVE_LIMIT");
       }
 
+      let countryId: string | null = null;
+      let regionId = parsed.data.regionId;
+      let cityId = parsed.data.cityId;
+      let neighborhoodId = parsed.data.neighborhoodId;
+      let governorate = parsed.data.governorate;
+      let city = parsed.data.city;
+      let neighborhood = parsed.data.neighborhood;
+
+      if (parsed.data.countryCode) {
+        const country = await tx.country.findUnique({
+          where: { code: parsed.data.countryCode },
+        });
+        if (!country) {
+          throw new Error("UNKNOWN_COUNTRY");
+        }
+        countryId = country.id;
+      }
+
+      if (regionId) {
+        const region = await tx.region.findUnique({ where: { id: regionId } });
+        if (!region || (countryId && region.countryId !== countryId)) {
+          throw new Error("UNKNOWN_REGION");
+        }
+        countryId = countryId || region.countryId;
+        governorate = region.name;
+      } else if (governorate) {
+        const region = await tx.region.findFirst({
+          where: {
+            name: governorate,
+            ...(countryId ? { countryId } : {}),
+          },
+        });
+        if (!region) {
+          throw new Error("UNKNOWN_REGION");
+        }
+        regionId = region.id;
+        countryId = countryId || region.countryId;
+        governorate = region.name;
+      }
+
+      if (cityId) {
+        const cityRow = await tx.city.findUnique({ where: { id: cityId } });
+        if (!cityRow || (regionId && cityRow.regionId !== regionId)) {
+          throw new Error("UNKNOWN_CITY");
+        }
+        city = cityRow.name;
+      }
+
+      if (neighborhoodId) {
+        const area = await tx.neighborhood.findUnique({ where: { id: neighborhoodId } });
+        if (!area || (cityId && area.cityId !== cityId)) {
+          throw new Error("UNKNOWN_NEIGHBORHOOD");
+        }
+        neighborhood = area.name;
+      }
+
       const createdAt = new Date();
       return tx.listing.create({
         data: {
@@ -57,14 +113,19 @@ export async function POST(req: Request) {
           price: parsed.data.price,
           currency: parsed.data.currency,
           category: parsed.data.category,
-          governorate: parsed.data.governorate,
-          city: parsed.data.city,
-          neighborhood: parsed.data.neighborhood,
+          governorate,
+          city,
+          neighborhood,
+          countryId,
+          regionId,
+          cityId,
+          neighborhoodId,
           userId,
           createdAt,
           expiresAt: expiresAtFrom(createdAt),
           isSold: false,
           isFeatured: false,
+          state: "active",
           viewCount: 0,
           chatCount: 0,
         },
@@ -80,6 +141,14 @@ export async function POST(req: Request) {
         },
         { status: 409 },
       );
+    }
+    if (
+      error instanceof Error &&
+      ["UNKNOWN_COUNTRY", "UNKNOWN_REGION", "UNKNOWN_CITY", "UNKNOWN_NEIGHBORHOOD"].includes(
+        error.message,
+      )
+    ) {
+      return NextResponse.json({ error: "Choose a valid location." }, { status: 400 });
     }
     if (isLockTimeoutError(error)) {
       return NextResponse.json(

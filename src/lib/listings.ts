@@ -5,6 +5,7 @@ export const MAX_ACTIVE_LISTINGS = 5;
 export const LISTING_TTL_DAYS = 30;
 export const ALLOWED_CURRENCIES = ["JOD"] as const;
 
+/** @deprecated Legacy Jordan labels only. New listings must resolve Region from the database. */
 export const GOVERNORATES = [
   "Amman",
   "Zarqa",
@@ -37,7 +38,6 @@ export function listingState(input: {
   return "active";
 }
 
-/** Public marketplace: exclude sold, expired, and soft-deleted. */
 export function activeListingWhere(now = new Date()) {
   return {
     AND: [
@@ -75,6 +75,10 @@ export function parseListingInput(body: Record<string, unknown>) {
   const description = String(body.description ?? "").trim();
   const currency = String(body.currency ?? "JOD").trim().toUpperCase() || "JOD";
   const category = String(body.category ?? "").trim();
+  const countryCode = String(body.countryCode ?? "").trim().toUpperCase();
+  const regionId = String(body.regionId ?? "").trim();
+  const cityId = String(body.cityId ?? "").trim();
+  const neighborhoodId = String(body.neighborhoodId ?? "").trim();
   const governorate = String(body.governorate ?? "").trim();
   const city = String(body.city ?? "").trim();
   const neighborhoodRaw = String(body.neighborhood ?? "").trim();
@@ -96,10 +100,10 @@ export function parseListingInput(body: Record<string, unknown>) {
   if (!isKnownCategory(category)) {
     return { error: "Choose a valid category." };
   }
-  if (!(GOVERNORATES as readonly string[]).includes(governorate)) {
-    return { error: "Choose a valid governorate." };
+  if (!regionId && !governorate) {
+    return { error: "Choose a region." };
   }
-  if (city.length < 2 || city.length > 40) {
+  if (!cityId && (city.length < 2 || city.length > 40)) {
     return { error: "City must be 2–40 characters." };
   }
   if (neighborhood && neighborhood.length > 60) {
@@ -113,8 +117,12 @@ export function parseListingInput(body: Record<string, unknown>) {
       price,
       currency,
       category,
-      governorate,
-      city,
+      countryCode: countryCode || null,
+      regionId: regionId || null,
+      cityId: cityId || null,
+      neighborhoodId: neighborhoodId || null,
+      governorate: governorate || null,
+      city: city || null,
       neighborhood,
     },
   };

@@ -9,6 +9,22 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: catch
+          POSTGRES_PASSWORD: catch
+          POSTGRES_DB: catch_phase1
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://catch:catch@localhost:5432/catch_phase1?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,7 +33,7 @@ jobs:
       - run: npm ci
       - run: npx prisma validate
       - run: npx prisma generate
-      - name: Typecheck if configured
-        run: npx tsc --noEmit --pretty false || true
-      - name: Do not migrate production
-        run: echo "Skipping prisma migrate deploy in CI without isolated DATABASE_URL"
+      - run: npx prisma migrate deploy
+      - run: npx tsc --noEmit --pretty false
+      - name: Next build without a second migrate deploy
+        run: npx next build

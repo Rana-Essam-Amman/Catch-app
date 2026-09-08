@@ -11,7 +11,7 @@ export function SearchBar({
     <form action={action} method="get" className="w-full">
       <label className="relative block">
         <span className="pointer-events-none absolute inset-y-0 start-4 flex items-center text-[var(--color-muted)]">
-          \u2315
+          {⌕}
         </span>
         <input
           name="q"

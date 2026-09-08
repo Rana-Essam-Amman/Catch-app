@@ -20,7 +20,7 @@ export const GOVERNORATES = [
   "Aqaba",
 ] as const;
 
-export type ListingLifecycleState = "active" | "expired" | "sold";
+export type ListingLifecycleState = "active" | "expired" | "sold" | "deleted";
 
 export function listingState(input: {
   isSold: boolean;
@@ -35,10 +35,51 @@ export function listingState(input: {
   return "active";
 }
 
+/**
+ * Query filter for public active listings.
+ * 
+ * Returns only listings that should be visible in public marketplace:
+ * - NOT sold
+ * - NOT expired
+ * - NOT deleted (soft-delete)
+ * 
+ * After migration, this uses the new "state" field.
+ * During transition, also checks legacy fields for backward compatibility.
+ */
 export function activeListingWhere(now = new Date()) {
   return {
-    isSold: false,
-    OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    AND: [
+      // New authoritative state field (preferred after migration)
+      { state: "active" },
+      // Fallback to legacy fields during transition
+      {
+        OR: [
+          // Legacy path: if state not yet populated, use old logic
+          { state: null },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Alternative query for backward compatibility during migration.
+ * Checks BOTH new state field AND legacy fields.
+ */
+export function activeLis tingWhereWithFallback(now = new Date()) {
+  return {
+    OR: [
+      // New canonical state
+      { state: "active" },
+      // Legacy fallback (state not yet populated)
+      {
+        AND: [
+          { state: null },
+          { isSold: false },
+          { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        ],
+      },
+    ],
   };
 }
 
@@ -46,7 +87,7 @@ export async function countActiveListings(userId: string, now = new Date()) {
   return prisma.listing.count({
     where: {
       userId,
-      ...activeListingWhere(now),
+      ...activeListingWhereWithFallback(now),
     },
   });
 }

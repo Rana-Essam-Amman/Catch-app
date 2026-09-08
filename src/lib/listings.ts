@@ -3,6 +3,7 @@ import { CATEGORIES } from "@/lib/categories";
 
 export const MAX_ACTIVE_LISTINGS = 5;
 export const LISTING_TTL_DAYS = 30;
+export const ALLOWED_CURRENCIES = ["JOD"] as const;
 
 export const GOVERNORATES = [
   "Amman",
@@ -59,15 +60,15 @@ export function isKnownCategory(slug: string) {
 }
 
 export function parseListingInput(body: Record<string, unknown>) {
-  const title = String(body.title || "").trim();
-  const description = String(body.description || "").trim();
-  const currency = String(body.currency || "JOD").trim().toUpperCase() || "JOD";
-  const category = String(body.category || "").trim();
-  const governorate = String(body.governorate || "").trim();
-  const city = String(body.city || "").trim();
-  const neighborhood = String(body.neighborhood || "").trim() || null;
-  const priceRaw = String(body.price || "").trim();
-  const price = Number(priceRaw);
+  const title = String(body.title ?? "").trim();
+  const description = String(body.description ?? "").trim();
+  const currency = String(body.currency ?? "JOD").trim().toUpperCase() || "JOD";
+  const category = String(body.category ?? "").trim();
+  const governorate = String(body.governorate ?? "").trim();
+  const city = String(body.city ?? "").trim();
+  const neighborhoodRaw = String(body.neighborhood ?? "").trim();
+  const neighborhood = neighborhoodRaw ? neighborhoodRaw : null;
+  const price = Number(String(body.price ?? "").trim());
 
   if (title.length < 3 || title.length > 80) {
     return { error: "Title must be 3–80 characters." };
@@ -75,14 +76,23 @@ export function parseListingInput(body: Record<string, unknown>) {
   if (description.length < 8 || description.length > 2000) {
     return { error: "Description must be 8–2000 characters." };
   }
-  if (!Number.isFinite(price) || price <= 0) {
+  if (!Number.isFinite(price) || price <= 0 || price > 99_999_999.99) {
     return { error: "Enter a valid price." };
+  }
+  if (!(ALLOWED_CURRENCIES as readonly string[]).includes(currency)) {
+    return { error: "Currency must be JOD." };
   }
   if (!isKnownCategory(category)) {
     return { error: "Choose a valid category." };
   }
-  if (!governorate || !city) {
-    return { error: "Governorate and city are required." };
+  if (!(GOVERNORATES as readonly string[]).includes(governorate)) {
+    return { error: "Choose a valid governorate." };
+  }
+  if (city.length < 2 || city.length > 40) {
+    return { error: "City must be 2–40 characters." };
+  }
+  if (neighborhood && neighborhood.length > 60) {
+    return { error: "Neighborhood is too long." };
   }
 
   return {
@@ -97,4 +107,13 @@ export function parseListingInput(body: Record<string, unknown>) {
       neighborhood,
     },
   };
+}
+
+export function isLockTimeoutError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return (
+    message.includes("lock timeout") ||
+    message.includes("55p03") ||
+    message.includes("canceling statement due to lock timeout")
+  );
 }

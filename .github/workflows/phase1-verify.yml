@@ -33,7 +33,7 @@ jobs:
       - run: npm install
       - run: npx prisma validate
       - run: npx prisma generate
-      - run: npx prisma migrate deploy
+      - run: npx prisma migrate reset --force --skip-seed && npx prisma migrate deploy
       - run: npx tsc --noEmit --pretty false
       - name: Next build without a second migrate deploy
         run: npx next build

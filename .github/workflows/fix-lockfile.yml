@@ -1,0 +1,31 @@
+name: Fix package-lock.json
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate real lockfile
+        run: |
+          npm install --package-lock-only --ignore-scripts --registry=https://registry.npmjs.org/
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add package-lock.json
+          git commit -m "fix: replace placeholder package-lock.json with real lockfile" || echo "No changes"
+          git push origin dev
